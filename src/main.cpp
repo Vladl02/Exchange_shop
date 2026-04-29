@@ -258,6 +258,7 @@ void ownerMenu(Owner& owner, ExchangeShop& shop) {
         std::cout << "6 - Print transaction history (from date)\n";
         std::cout << "7 - Get liquidity\n";
         std::cout << "8 - Exchange shop info (owner view)\n";
+        std::cout << "9 - Transaction stats\n";
         std::cout << "0 - Back\n";
 
         int option = 0;
@@ -330,6 +331,9 @@ void ownerMenu(Owner& owner, ExchangeShop& shop) {
                 break;
             case 8:
                 owner.printExpenseShopInfo(std::cout);
+                break;
+            case 9:
+                shop.printTransactionStats(std::cout);
                 break;
             default:
                 std::cout << "Unknown option.\n";

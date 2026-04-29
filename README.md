@@ -59,7 +59,7 @@ Aplicatia va ilustra urmatoarele functionalitati:
 
 ### 8. Exceptii proprii si tratarea erorilor
 1. ierarhie de exceptii: `ExchangeException`, `ValidationException`, `NotFoundException`, `TransactionConstraintException`
-2. exceptiile sunt aruncate in validari si reguli de business
+2. exceptiile sunt aruncate in validari si reguli de functionare
 3. exceptiile sunt tratate cu `try/catch` in zonele de interactiune (`main`, meniuri, replay, demo)
 
 ### 9. Persistenta si scenarii de rulare
