@@ -10,6 +10,7 @@
 class Transaction;
 class ExchangeShop;
 
+// clasa derivata din User
 class Owner : public User {
 public:
     Owner(const std::string& name_, ExchangeShop& shop_);
@@ -31,6 +32,7 @@ public:
 
     const double getGrossProfit() const;
     const double getNetProfit() const;
+    void printLiquidity(std::ostream& out) const;
 
 private:
     std::vector<std::shared_ptr<Transaction>> filterTransactionHistory(

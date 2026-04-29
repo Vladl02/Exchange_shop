@@ -12,6 +12,7 @@ std::ostream& operator<<(std::ostream& out, const User& user) {
 }
 
 User::User(const std::string& name_, ExchangeShop& shop_)
+    // constructor din baza apelat de derivate
     : shop(&shop_), name(name_), id(num_users) {
     num_users++;
 }
@@ -20,6 +21,8 @@ const std::string User::getName() const { return name; }
 int User::getId() const { return id; }
 
 std::vector<std::shared_ptr<Transaction>> User::getTransactionHistory(const Date& from) const {
+    // nvi
+    // functia publica este fixa, iar filtrarea e virtuala in derivate
     const std::vector<std::shared_ptr<Transaction>> history = loadTransactionHistory(from);
     return filterTransactionHistory(history);
 }

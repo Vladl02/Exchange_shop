@@ -9,6 +9,7 @@
 class Transaction;
 class ExchangeShop;
 
+
 class Cashier : public User {
 private:
     std::string owner_name;

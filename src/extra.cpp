@@ -3,8 +3,6 @@
 #include<cctype>
 #include<utility>
 
-namespace {
-
 bool isLeapYear(const int year) {
     if (year % 400 == 0) return true;
     if (year % 100 == 0) return false;
@@ -23,7 +21,13 @@ int getDaysInMonth(const int month, const int year) {
     return 0;
 }
 
-} // namespace
+std::string padLeft(int value, int width) {
+    std::string text = std::to_string(value);
+    while (static_cast<int>(text.size()) < width) {
+        text = "0" + text;
+    }
+    return text;
+}
 
 Date::Date(int day_, int month_, int year_) : day(day_), month(month_), year(year_){
     if (year < 1) {
@@ -58,7 +62,7 @@ Date::Date(const std::string& iso_ymd) : day(1), month(1), year(1) {
 }
 
 std::string Date::stringify() const{
-    return std::to_string(day) + "-" + std::to_string(month) + "-" + std::to_string(year);
+    return padLeft(year, 4) + "-" + padLeft(month, 2) + "-" + padLeft(day, 2);
 }
 
 bool operator==(const Date& lhs, const Date& rhs) {
@@ -75,8 +79,6 @@ bool operator<=(const Date& lhs, const Date& rhs) {
     return (lhs < rhs) || (lhs == rhs);
 }
 
-
-
 ExchangeRate::ExchangeRate(
     std::string currency_name_,
     double price_selling_,
@@ -91,4 +93,3 @@ Record::Record(
         std::vector<ExchangeRate> rates_
 ):  date(std::move(date_)),
     rates(std::move(rates_)) {}
-

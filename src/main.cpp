@@ -3,6 +3,9 @@
 #include <Owner.h>
 #include <Cashier.h>
 #include <Client.h>
+#include <Exchange.h>
+#include <Deposit.h>
+#include <Withdraw.h>
 
 #include <fstream>
 #include <cstdlib>
@@ -10,8 +13,6 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
-namespace {
 
 const std::string kDataFile = "shop_data.txt";
 
@@ -33,6 +34,7 @@ std::string askToken(const std::string& prompt) {
     std::string value;
     if (!(std::cin >> value)) {
         clearInputBuffer();
+        // throw folosit cu sens la validare input
         throw ValidationException("expected text input");
     }
     return value;
@@ -43,6 +45,7 @@ int askInt(const std::string& prompt) {
     int value = 0;
     if (!(std::cin >> value)) {
         clearInputBuffer();
+        // throw folosit cu sens la validare input
         throw ValidationException("expected integer input");
     }
     return value;
@@ -53,6 +56,7 @@ double askDouble(const std::string& prompt) {
     double value = 0.0;
     if (!(std::cin >> value)) {
         clearInputBuffer();
+        // throw folosit cu sens la validare input
         throw ValidationException("expected numeric input");
     }
     return value;
@@ -60,6 +64,26 @@ double askDouble(const std::string& prompt) {
 
 Date askDate(const std::string& label) {
     return Date(askToken("Enter " + label + " (YYYY-MM-DD): "));
+}
+
+void printAvailableCurrencies(const ExchangeShop& shop) {
+    const std::vector<Currency>& currencies = shop.getCurrencies();
+    if (currencies.empty()) {
+        std::cout << "Available currencies: none\n";
+        return;
+    }
+
+    std::cout << "Available currencies: ";
+    for (size_t i = 0; i < currencies.size(); ++i) {
+        if (i > 0) std::cout << ", ";
+        std::cout << currencies[i].getName();
+    }
+    std::cout << '\n';
+}
+
+std::string askCurrencyFromShop(const std::string& prompt, const ExchangeShop& shop) {
+    printAvailableCurrencies(shop);
+    return askToken(prompt);
 }
 
 bool loadSetup(
@@ -171,6 +195,7 @@ void replayOperations(const std::string& path, ExchangeShop& shop, Owner& owner,
                 break;
             }
         } catch (const std::exception& e) {
+            // try catch folosit la citirea operatiilor din fisier
             std::cout << "Failed to replay operation '" << type << "': " << e.what() << '\n';
             break;
         }
@@ -211,37 +236,29 @@ void populateCurrencyHistory(Cashier& cashier, const std::string& mainCurrency) 
             cashier.setPrice("GBP", gbpDay1, 5.85, 5.73);
             cashier.setPrice("GBP", gbpDay2, 5.88, 5.76);
         }
+
+        if (mainCurrency != "MDL") {
+            Date mdlDay1(1, 1, 2024);
+            Date mdlDay2(2, 1, 2024);
+            cashier.setPrice("MDL", mdlDay1, 0.26, 0.247);
+            cashier.setPrice("MDL", mdlDay2, 0.262, 0.249);
+        }
     } catch (const ExchangeException&) {
-    }
-}
-
-void printLiquidity(const ExchangeShop& shop) {
-    const auto& currencies = shop.getCurrencies();
-    if (currencies.empty()) {
-        std::cout << "No currencies in shop.\n";
-        return;
-    }
-
-    std::cout << "Liquidity:\n";
-    for (const auto& currency : currencies) {
-        std::cout << "- " << currency.getName()
-                  << ": " << std::fixed << std::setprecision(2)
-                  << currency.getTotal() << '\n';
     }
 }
 
 void ownerMenu(Owner& owner, ExchangeShop& shop) {
     while (true) {
         std::cout << "\n=== Owner Menu ===\n";
-        std::cout << "1. Owner info\n";
-        std::cout << "2. Deposit money\n";
-        std::cout << "3. Withdraw money\n";
-        std::cout << "4. Show gross/net profit\n";
-        std::cout << "5. Set tax\n";
-        std::cout << "6. Print transaction history (from date)\n";
-        std::cout << "7. Get liquidity\n";
-        std::cout << "8. Exchange shop info (owner view)\n";
-        std::cout << "0. Back\n";
+        std::cout << "1 - Owner info\n";
+        std::cout << "2 - Deposit money\n";
+        std::cout << "3 - Withdraw money\n";
+        std::cout << "4 - Show gross/net profit\n";
+        std::cout << "5 - Set tax\n";
+        std::cout << "6 - Print transaction history (from date)\n";
+        std::cout << "7 - Get liquidity\n";
+        std::cout << "8 - Exchange shop info (owner view)\n";
+        std::cout << "0 - Back\n";
 
         int option = 0;
         try {
@@ -255,8 +272,8 @@ void ownerMenu(Owner& owner, ExchangeShop& shop) {
                 break;
             }
             case 2: {
-                const Date date = askDate("deposit date");
-                const std::string currency = askToken("Currency: ");
+                const Date date = shop.getLastDate();
+                const std::string currency = askCurrencyFromShop("Currency: ", shop);
                 const double amount = askDouble("Amount: ");
                 owner.depositMoney(date, currency, amount);
 
@@ -269,11 +286,12 @@ void ownerMenu(Owner& owner, ExchangeShop& shop) {
                 });
                 if (!ok) std::cout << "Warning: could not save operation to file.\n";
                 std::cout << "Deposit successful.\n";
+                std::cout << "(date used: " << date.stringify() << ")\n";
                 break;
             }
             case 3: {
-                const Date date = askDate("withdraw date");
-                const std::string currency = askToken("Currency: ");
+                const Date date = shop.getLastDate();
+                const std::string currency = askCurrencyFromShop("Currency: ", shop);
                 const double amount = askDouble("Amount: ");
                 owner.withdrawMoney(date, currency, amount);
 
@@ -286,6 +304,7 @@ void ownerMenu(Owner& owner, ExchangeShop& shop) {
                 });
                 if (!ok) std::cout << "Warning: could not save operation to file.\n";
                 std::cout << "Withdraw successful.\n";
+                std::cout << "(date used: " << date.stringify() << ")\n";
                 break;
             }
             case 4:
@@ -307,7 +326,7 @@ void ownerMenu(Owner& owner, ExchangeShop& shop) {
                 break;
             }
             case 7:
-                printLiquidity(shop);
+                owner.printLiquidity(std::cout);
                 break;
             case 8:
                 owner.printExpenseShopInfo(std::cout);
@@ -317,9 +336,8 @@ void ownerMenu(Owner& owner, ExchangeShop& shop) {
                 break;
             }
         } catch (const ExchangeException& e) {
+            // try catch in main flow pentru exceptiile proprii
             std::cout << e.what() << '\n';
-        } catch (const std::exception& e) {
-            std::cout << "Unexpected error: " << e.what() << '\n';
         }
     }
 }
@@ -327,13 +345,13 @@ void ownerMenu(Owner& owner, ExchangeShop& shop) {
 void cashierMenu(Cashier& cashier, ExchangeShop& shop) {
     while (true) {
         std::cout << "\n=== Cashier Menu ===\n";
-        std::cout << "1. Cashier info\n";
-        std::cout << "2. Set currency prices\n";
-        std::cout << "3. Exchange money\n";
-        std::cout << "4. Print transaction history (from date)\n";
-        std::cout << "5. Get liquidity\n";
-        std::cout << "6. Exchange shop info (cashier view)\n";
-        std::cout << "0. Back\n";
+        std::cout << "1 - Cashier info\n";
+        std::cout << "2 - Set currency prices\n";
+        std::cout << "3 - Exchange money\n";
+        std::cout << "4 - Print transaction history (from date)\n";
+        std::cout << "5 - Get liquidity\n";
+        std::cout << "6 - Exchange shop info (cashier view)\n";
+        std::cout << "0 - Back\n";
 
         int option = 0;
         try {
@@ -346,7 +364,7 @@ void cashierMenu(Cashier& cashier, ExchangeShop& shop) {
                 std::cout << cashier;
                 break;
             case 2: {
-                const std::string currency = askToken("Currency: ");
+                const std::string currency = askCurrencyFromShop("Currency: ", shop);
                 Date date = askDate("price date");
                 const double buy = askDouble("Buy price: ");
                 const double sell = askDouble("Sell price: ");
@@ -366,8 +384,8 @@ void cashierMenu(Cashier& cashier, ExchangeShop& shop) {
             }
             case 3: {
                 const Date date = askDate("exchange date");
-                const std::string inCurrency = askToken("Currency in: ");
-                const std::string outCurrency = askToken("Currency out: ");
+                const std::string inCurrency = askCurrencyFromShop("Currency in: ", shop);
+                const std::string outCurrency = askCurrencyFromShop("Currency out: ", shop);
                 const double sumIn = askDouble("Sum in: ");
                 double sumOut = 0.0;
                 cashier.exchangeMoney(date, inCurrency, outCurrency, sumIn, sumOut);
@@ -393,7 +411,19 @@ void cashierMenu(Cashier& cashier, ExchangeShop& shop) {
                 break;
             }
             case 5:
-                printLiquidity(shop);
+                {
+                    const auto& currencies = shop.getCurrencies();
+                    if (currencies.empty()) {
+                        std::cout << "No currencies in shop.\n";
+                    } else {
+                        std::cout << "Liquidity:\n";
+                        for (const auto& currency : currencies) {
+                            std::cout << "- " << currency.getName()
+                                      << ": " << std::fixed << std::setprecision(2)
+                                      << currency.getTotal() << '\n';
+                        }
+                    }
+                }
                 break;
             case 6:
                 cashier.printExpenseShopInfo(std::cout);
@@ -403,9 +433,8 @@ void cashierMenu(Cashier& cashier, ExchangeShop& shop) {
                 break;
             }
         } catch (const ExchangeException& e) {
+            // try catch in main flow pentru exceptiile proprii
             std::cout << e.what() << '\n';
-        } catch (const std::exception& e) {
-            std::cout << "Unexpected error: " << e.what() << '\n';
         }
     }
 }
@@ -419,13 +448,13 @@ void userMenu(ExchangeShop& shop) {
 
         while (true) {
             std::cout << "\n=== User Menu (" << user.getName() << ", id=" << user.getId() << ") ===\n";
-            std::cout << "1. User info\n";
-            std::cout << "2. Get selling price (last date)\n";
-            std::cout << "3. Get buying price (last date)\n";
-            std::cout << "4. Exchange money (last date)\n";
-            std::cout << "5. Print my transaction history (until last date)\n";
-            std::cout << "6. Exchange shop info (client view)\n";
-            std::cout << "0. Back\n";
+            std::cout << "1 - User info\n";
+            std::cout << "2 - Get selling price (last date)\n";
+            std::cout << "3 - Get buying price (last date)\n";
+            std::cout << "4 - Exchange money (last date)\n";
+            std::cout << "5 - Print my transaction history (until last date)\n";
+            std::cout << "6 - Exchange shop info (client view)\n";
+            std::cout << "0 - Back\n";
 
             const int option = askInt("Choose: ");
             clearScreen();
@@ -438,22 +467,22 @@ void userMenu(ExchangeShop& shop) {
                 std::cout << user;
                 break;
             case 2: {
-                const std::string currency = askToken("Currency: ");
+                const std::string currency = askCurrencyFromShop("Currency: ", shop);
                 std::cout << "Selling price: " << std::fixed << std::setprecision(2)
                           << user.getSellingPrice(currency, lastDate) << '\n';
                 std::cout << "(date used: " << lastDate.stringify() << ")\n";
                 break;
             }
             case 3: {
-                const std::string currency = askToken("Currency: ");
+                const std::string currency = askCurrencyFromShop("Currency: ", shop);
                 std::cout << "Buying price: " << std::fixed << std::setprecision(2)
                           << user.getBuyingPrice(currency, lastDate) << '\n';
                 std::cout << "(date used: " << lastDate.stringify() << ")\n";
                 break;
             }
             case 4: {
-                const std::string inCurrency = askToken("Currency in: ");
-                const std::string outCurrency = askToken("Currency out: ");
+                const std::string inCurrency = askCurrencyFromShop("Currency in: ", shop);
+                const std::string outCurrency = askCurrencyFromShop("Currency out: ", shop);
                 const double sumIn = askDouble("Sum in: ");
                 double sumOut = 0.0;
                 user.exchangeMoney(lastDate, inCurrency, outCurrency, sumIn, sumOut);
@@ -489,39 +518,131 @@ void userMenu(ExchangeShop& shop) {
             }
         }
     } catch (const ExchangeException& e) {
+        // try catch in main flow pentru exceptiile proprii
         std::cout << e.what() << '\n';
     } catch (const std::exception& e) {
+        // fallback pentru exceptii standard
         std::cout << "Unexpected error: " << e.what() << '\n';
     }
 }
 
-} // namespace
+void demonstrateFunctionality(ExchangeShop& shop, Owner& owner, Cashier& cashier) {
+    Client clientA("ClientA", shop);
+    const Date demoDate = shop.getLastDate();
+
+    std::cout << "\n=== DEMONSTRATION ===\n";
+    std::cout << owner << cashier << clientA;
+
+    bool demoOpsOk = false;
+    try {
+        shop.setTax(0.16);
+        owner.depositMoney(demoDate, shop.getMainCurrencyName(), 5000.0);
+        owner.depositMoney(demoDate, "EUR", 1000.0);
+        owner.depositMoney(demoDate, "USD", 1000.0);
+        owner.withdrawMoney(demoDate, shop.getMainCurrencyName(), 250.0);
+
+        Date extraDate(demoDate);
+        cashier.setPrice("CHF", extraDate, 5.40, 5.20);
+        owner.depositMoney(extraDate, "CHF", 300.0);
+
+        double out1 = 0.0;
+        cashier.exchangeMoney(demoDate, shop.getMainCurrencyName(), "EUR", 250.0, out1);
+
+        double out2 = 0.0;
+        clientA.exchangeMoney(demoDate, "EUR", shop.getMainCurrencyName(), 50.0, out2);
+
+        const double buyEur = clientA.getBuyingPrice("EUR", demoDate);
+        const double sellEur = clientA.getSellingPrice("EUR", demoDate);
+        std::cout << "\nSample results:\n";
+        std::cout << "Cashier exchange out: " << std::fixed << std::setprecision(2) << out1 << '\n';
+        std::cout << "Client exchange out: " << std::fixed << std::setprecision(2) << out2 << '\n';
+        std::cout << "EUR prices buy/sell: "
+                  << std::fixed << std::setprecision(2) << buyEur
+                  << " / " << sellEur << '\n';
+        demoOpsOk = true;
+    } catch (const ExchangeException& e) {
+        // try catch in demo
+        std::cout << "Demo operation failed: " << e.what() << '\n';
+    }
+
+    if (!demoOpsOk) {
+        std::cout << "demo oprit pentru ca operatiile nu au fost finalizate\n";
+        return;
+    }
+
+    std::cout << "\nShop info dupa operatii:\n";
+    owner.printExpenseShopInfo(std::cout);
+    std::cout << '\n';
+    cashier.printExpenseShopInfo(std::cout);
+    std::cout << '\n';
+    clientA.printExpenseShopInfo(std::cout);
+
+    std::cout << "\nLiquidity and profits:\n";
+    owner.printLiquidity(std::cout);
+    std::cout << "Gross: " << std::fixed << std::setprecision(2) << shop.getGrossProfit() << '\n';
+    std::cout << "Net: " << std::fixed << std::setprecision(2) << shop.getNetProfit() << '\n';
+    shop.printTransactionStats(std::cout);
+
+    const std::vector<std::shared_ptr<Transaction>> demoHistory =
+        shop.getTransactionHistory(Date(1, 1, 2000), Date(31, 12, 9999));
+    std::cout << "\nHistory size: " << demoHistory.size() << '\n';
+
+    std::cout << "\nClone() examples:\n";
+    std::vector<std::shared_ptr<Transaction>> cloned;
+    cloned.push_back(Deposit(demoDate, owner.getName(), owner.getId(), "EUR", 10.0).clone());
+    cloned.push_back(Withdraw(demoDate, owner.getName(), owner.getId(), "USD", 5.0).clone());
+    cloned.push_back(Exchange(demoDate, cashier.getName(), cashier.getId(), "EUR", "USD", 25.0, 24.0).clone());
+    std::cout << "numar clone create: " << cloned.size() << '\n';
+
+    if (!demoHistory.empty()) {
+        std::shared_ptr<Transaction> clonedReal = demoHistory[0]->clone();
+        std::cout << "clona din istoric real creata cu id original: "
+                  << demoHistory[0]->getId()
+                  << ", id clona: " << clonedReal->getId() << '\n';
+    }
+
+    std::cout << "\nCopy and assignment for ExchangeShop:\n";
+    ExchangeShop copyByCtor(shop);
+    std::cout << copyByCtor;
+    ExchangeShop copyByAssign(shop.getMainCurrencyName());
+    copyByAssign = shop;
+    std::cout << copyByAssign;
+
+    std::cout << "=== END ===\n";
+}
 
 int main() {
     std::cout << "=== Exchange Shop Console ===\n";
-    bool interactive = true;
+    bool terminal = 1;
 
     std::string mainCurrency;
     std::string ownerName;
     std::string cashierName;
 
-    if (!loadSetup(kDataFile, mainCurrency, ownerName, cashierName)) {
-        std::cout << "No valid data file found. Initial setup required.\n";
-        try {
-            mainCurrency = askToken("Main currency: ");
-            ownerName = askToken("Owner name: ");
-            cashierName = askToken("Cashier name: ");
-        } catch (const ExchangeException& e) {
-            std::cout << e.what() << '\n';
-            return 1;
-        }
+    if (terminal) {
+        if (!loadSetup(kDataFile, mainCurrency, ownerName, cashierName)) {
+            std::cout << "No valid data file found. Initial setup required.\n";
+            try {
+                mainCurrency = askToken("Main currency: ");
+                ownerName = askToken("Owner name: ");
+                cashierName = askToken("Cashier name: ");
+            } catch (const ExchangeException& e) {
+                // try catch in main
+                std::cout << e.what() << '\n';
+                return 1;
+            }
 
-        if (!saveSetup(kDataFile, mainCurrency, ownerName, cashierName)) {
-            std::cout << "Failed to create data file.\n";
-            return 1;
+            if (!saveSetup(kDataFile, mainCurrency, ownerName, cashierName)) {
+                std::cout << "Failed to create data file.\n";
+                return 1;
+            }
+        } else {
+            std::cout << "Loaded data from " << kDataFile << ".\n";
         }
     } else {
-        std::cout << "Loaded data from " << kDataFile << ".\n";
+        mainCurrency = "RON";
+        ownerName = "DemoOwner";
+        cashierName = "DemoCashier";
     }
 
     ExchangeShop shop(mainCurrency);
@@ -529,10 +650,16 @@ int main() {
     Cashier cashier(cashierName, shop, ownerName);
 
     populateCurrencyHistory(cashier, mainCurrency);
+
+    if (!terminal) {
+        demonstrateFunctionality(shop, owner, cashier);
+        return 0;
+    }
+
     replayOperations(kDataFile, shop, owner, cashier);
     syncNextUserId(owner, cashier, shop);
 
-    while (interactive) {
+    while (terminal) {
         std::cout << "\n=== Choose Role ===\n";
         std::cout << "a - Owner\n";
         std::cout << "b - Cashier\n";
@@ -556,13 +683,14 @@ int main() {
                 break;
             case 'd':
                 std::cout << "Bye.\n";
-                interactive = false;
+                terminal = false;
                 break;
             default:
                 std::cout << "Unknown option.\n";
                 break;
             }
         } catch (const ExchangeException& e) {
+            // try catch in main
             std::cout << e.what() << '\n';
         }
     }

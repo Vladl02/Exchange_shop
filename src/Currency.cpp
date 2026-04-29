@@ -1,4 +1,3 @@
-#pragma once
 
 #include<Currency.h>
 #include<string>

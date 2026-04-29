@@ -4,6 +4,7 @@
 #include <Transaction.h>
 #include <iomanip>
 
+// aici se apeleaza constructorul din baza User
 Cashier::Cashier(const std::string& name_, ExchangeShop& shop_, const std::string& owner_name_)
     : User(name_, shop_), owner_name(owner_name_) {}
 

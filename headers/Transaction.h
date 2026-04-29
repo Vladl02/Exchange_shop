@@ -6,6 +6,7 @@
 
 class CurrencyHistory;
 
+// baza pentru tranzactii
 class Transaction {
 private:
     std::string initiator_name;
@@ -15,10 +16,12 @@ private:
     int id;
     double gross_profit;
     double net_profit;
+    // functie virtuala pura specifica temei
     virtual double profitCalculation(const CurrencyHistory& history) const = 0;
 public:
     Transaction(Date date_, std::string initiator_name_, int initiator_id_);
 
+    // clonare polimorfica
     virtual std::shared_ptr<Transaction> clone() const = 0;
 
     virtual ~Transaction() = default;

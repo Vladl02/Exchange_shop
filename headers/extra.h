@@ -18,7 +18,6 @@ struct Date{
 bool operator==(const Date& lhs, const Date& rhs);
 bool operator<(const Date& lhs, const Date& rhs);
 bool operator<=(const Date& lhs, const Date& rhs);
-bool cmp_date(const Date& d1, const Date& d2);
 
 struct ExchangeRate{
     std::string currency_name;

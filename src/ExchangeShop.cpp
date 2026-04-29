@@ -12,6 +12,7 @@ ExchangeShop::ExchangeShop(const std::string main_currency_name_)
 
 ExchangeShop::ExchangeShop(const ExchangeShop& other)
  :  history(other.history), main_currency_name(std::move(other.main_currency_name)), tax(other.tax), currencies(other.currencies){
+    // clonare polimorfica din vector de pointeri la baza
     for(auto& el: other.transactions){
         transactions.emplace_back(el->clone());
     }
@@ -28,6 +29,7 @@ void swap(ExchangeShop& s1, ExchangeShop& s2){
 }
 
 ExchangeShop& ExchangeShop::operator=(ExchangeShop other){
+    // copy and swap
     swap(*this, other);
     return (*this);
 }
@@ -247,6 +249,7 @@ void ExchangeShop::setPrice(const std::string currency_name, Date& date_, const 
 void ExchangeShop::printTransactionStats(std::ostream& os){
     int exchanges=0, deposits=0, withdraws=0;
     for (auto& tr: transactions){
+        // downcast cu sens
         if(auto tr1 = std::dynamic_pointer_cast<Exchange>(tr)) exchanges++;
         if(auto tr1 = std::dynamic_pointer_cast<Deposit>(tr)) deposits++;
         if(auto tr1 = std::dynamic_pointer_cast<Withdraw>(tr)) withdraws++;

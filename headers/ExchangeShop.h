@@ -7,10 +7,13 @@
 
 class ExchangeShop{
 private:
+    // folosim vector si string in loc de tablouri alocate manual
     std::vector<Currency> currencies;
     std::string main_currency_name;
     double tax;
     CurrencyHistory history;
+    // pointer la baza cu obiecte derivate
+    // aici apelam functii virtuale prin pointer la baza
     std::vector<std::shared_ptr<Transaction>> transactions;
 
     const Currency* findCurrency(const std::string currency_name) const;
@@ -43,6 +46,7 @@ public:
 
     std::vector<std::shared_ptr<Transaction>> getTransactionHistory(const Date& from, const Date& to) const;
 
+    // copy and swap pentru atribuire corecta
     ExchangeShop& operator=(ExchangeShop other);
 
     friend void swap(ExchangeShop& s1, ExchangeShop& s2);

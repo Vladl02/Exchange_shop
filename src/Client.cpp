@@ -5,6 +5,7 @@
 #include <Transaction.h>
 #include <iomanip>
 
+
 Client::Client(const std::string& name_, ExchangeShop& shop_) : User(name_, shop_) {}
 
 void Client::printExpenseShopInfo(std::ostream& out) const {

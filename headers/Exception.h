@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <string>
 
+// ierarhie proprie de exceptii
 class ExchangeException : public std::runtime_error {
 public:
     explicit ExchangeException(const std::string& message_)
@@ -25,5 +26,4 @@ public:
     explicit TransactionConstraintException(const std::string& message_)
         : ExchangeException("Transaction constraint error: " + message_) {}
 };
-
 

@@ -4,6 +4,7 @@
 #include <Transaction.h>
 #include <iomanip>
 
+// aici se apeleaza constructorul din baza User
 Owner::Owner(const std::string& name_, ExchangeShop& shop_) : User(name_, shop_) {}
 
 void Owner::printExpenseShopInfo(std::ostream& out) const {
@@ -49,6 +50,21 @@ const double Owner::getGrossProfit() const {
 
 const double Owner::getNetProfit() const {
     return shop->getNetProfit();
+}
+
+void Owner::printLiquidity(std::ostream& out) const {
+    const std::vector<Currency>& currencies = shop->getCurrencies();
+    if (currencies.empty()) {
+        out << "No currencies in shop.\n";
+        return;
+    }
+
+    out << "Liquidity:\n";
+    for (const auto& c : currencies) {
+        out << "- " << c.getName()
+            << ": " << std::fixed << std::setprecision(2)
+            << c.getTotal() << '\n';
+    }
 }
 
 std::vector<std::shared_ptr<Transaction>> Owner::filterTransactionHistory(

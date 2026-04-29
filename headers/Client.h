@@ -9,6 +9,7 @@
 class Transaction;
 class ExchangeShop;
 
+
 class Client : public User {
 public:
     Client(const std::string& name_, ExchangeShop& shop_);

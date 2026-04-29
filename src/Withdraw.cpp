@@ -28,7 +28,7 @@ void Withdraw::afisare(std::ostream& out) const {
     out << "--------  Transaction info  ---------\n";
     out << "- Type: " << "Withdraw" << '\n';
     out << "- id: " << getId() << '\n';
-    out << "- Client name: " << getInitiatorName() << '\n';
+    out << "- Initiator name: " << getInitiatorName() << '\n';
     out << "- Initiator id: " << getInitiatorId() << '\n';
     out << "- Date: " << getDate().stringify() << '\n';
     out << "- Currency: " << getCurrencyName() << '\n';
