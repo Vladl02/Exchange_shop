@@ -7,7 +7,6 @@
 
 class ExchangeShop{
 private:
-    // folosim vector si string in loc de tablouri alocate manual
     std::vector<Currency> currencies;
     std::string main_currency_name;
     double tax;
